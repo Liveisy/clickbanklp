@@ -80,13 +80,13 @@
             <li>✔️ No surgery, no medication required</li>
             <li>✔️ Immediate results from your first session</li>
         </ul>
-        <a id="purchase-button" class="cta-btn" href="https://bfecejwlshvxyu03eikbu24yc6.hop.clickbank.net/?&traffic_source=taboola&traffic_type=native&campaign=NewCampaign_20250616&creative=bannerV1&ad=ad1&extclid=[click_id]">Start Your Transformation Now</a>
+        <a id="purchase-button" class="cta-btn" href="https://7b2cc9wlwmsipz3047l83fdz18.hop.clickbank.net/?&traffic_source=taboola&traffic_type=native&campaign=NewCampaign_20250616&creative=bannerV1&ad=ad1&extclid=[click_id]">Start Your Transformation Now</a>
     </div>
 
     <script>
         // 当页面加载完成后执行
         window.addEventListener('DOMContentLoaded', (event) => {
-          // 1. 从当前页面的URL中获取Taboola的 "click_id" 的值
+          // 1. 从当前页面的URL中获取Taboola的 "click_id"
           const urlParams = new URLSearchParams(window.location.search);
           const taboolaClickId = urlParams.get('click_id'); 
       
@@ -97,14 +97,24 @@
             const purchaseButton = document.getElementById('purchase-button');
             
             if (purchaseButton) {
-              // 3.【关键修改】不再是追加参数，而是替换链接中的占位符
-              let originalHref = purchaseButton.href;
+              let hopLink = purchaseButton.href;
               
-              // 将 [click_id] 这个占位符（包括方括号），替换成我们从Taboola获取到的真实ID
-              let newHref = originalHref.replace('[click_id]', encodeURIComponent(taboolaClickId));
+              // 3.【智能逻辑】检查链接中是否已包含占位符 '[click_id]'
+              if (hopLink.includes('[click_id]')) {
+                // 如果包含，就替换它
+                console.log('Placeholder [click_id] found. Replacing it.');
+                hopLink = hopLink.replace('[click_id]', encodeURIComponent(taboolaClickId));
+              } else {
+                // 如果不包含（可能是个基础链接），就在末尾追加
+                console.log('Placeholder not found. Appending extclid parameter.');
+                const separator = hopLink.includes('?') ? '&' : '?';
+                hopLink = hopLink + separator + 'extclid=' + encodeURIComponent(taboolaClickId);
+              }
               
-              purchaseButton.href = newHref;
-              console.log('Final HopLink with real Click ID:', newHref);
+              // 4. 将最终生成的新链接赋值给按钮
+              purchaseButton.href = hopLink;
+              console.log('Final, updated HopLink:', purchaseButton.href);
+              
             } else {
               console.error('Error: Could not find the element with id="purchase-button"!');
             }
