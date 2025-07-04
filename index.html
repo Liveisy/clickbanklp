@@ -84,42 +84,23 @@
     </div>
 
     <script>
-        // 当页面加载完成后执行
-        window.addEventListener('DOMContentLoaded', (event) => {
-          // 1. 从当前页面的URL中获取Taboola的 "click_id"
-          const urlParams = new URLSearchParams(window.location.search);
-          const taboolaClickId = urlParams.get('click_id'); 
+        window.addEventListener('DOMContentLoaded', () => {
+          // 1. 获取从广告平台传来的所有URL参数
+          const incomingParams = new URLSearchParams(window.location.search);
       
-          if (taboolaClickId) {
-            console.log('Taboola Click ID found:', taboolaClickId);
-      
-            // 2. 通过唯一的ID精确找到购买按钮
+          // 2. 检查是否存在任何参数
+          if (incomingParams.toString()) {
+            console.log('Incoming params from Ad Platform:', incomingParams.toString());
             const purchaseButton = document.getElementById('purchase-button');
-            
+      
             if (purchaseButton) {
-              let hopLink = purchaseButton.href;
-              
-              // 3.【智能逻辑】检查链接中是否已包含占位符 '[click_id]'
-              if (hopLink.includes('[click_id]')) {
-                // 如果包含，就替换它
-                console.log('Placeholder [click_id] found. Replacing it.');
-                hopLink = hopLink.replace('[click_id]', encodeURIComponent(taboolaClickId));
-              } else {
-                // 如果不包含（可能是个基础链接），就在末尾追加
-                console.log('Placeholder not found. Appending extclid parameter.');
-                const separator = hopLink.includes('?') ? '&' : '?';
-                hopLink = hopLink + separator + 'extclid=' + encodeURIComponent(taboolaClickId);
-              }
-              
-              // 4. 将最终生成的新链接赋值给按钮
-              purchaseButton.href = hopLink;
-              console.log('Final, updated HopLink:', purchaseButton.href);
-              
-            } else {
-              console.error('Error: Could not find the element with id="purchase-button"!');
+              const originalHref = purchaseButton.href;
+              const separator = originalHref.includes('?') ? '&' : '?';
+      
+              // 3.【关键升级】将所有收到的参数，原封不动地追加到ClickBank HopLink后面
+              purchaseButton.href = originalHref + separator + incomingParams.toString();
+              console.log('Updated HopLink with all params:', purchaseButton.href);
             }
-          } else {
-            console.log('Taboola Click ID not found in URL.');
           }
         });
       </script>
