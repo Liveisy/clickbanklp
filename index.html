@@ -80,46 +80,74 @@
             <li>✔️ No surgery, no medication required</li>
             <li>✔️ Immediate results from your first session</li>
         </ul>
-        <a id="purchase-button" class="cta-btn" href="https://7b2cc9wlwmsipz3047l83fdz18.hop.clickbank.net/?&traffic_source=taboola&traffic_type=native&campaign=NewCampaign_20250616&creative=bannerV1&ad=ad1&extclid=[click_id]">Start Your Transformation Now</a>
+        <a id="purchase-button" class="cta-btn" href="https://71339epboizvqw2259x5w8m31m.hop.clickbank.net/?&traffic_source=superedge&traffic_type=native&campaign=usa-dfo-wellness&creative=bannerV1&ad=ad1&extclid=[tracking_id]">Start Your Transformation Now</a>
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', (event) => {
-          // 1. 从LP页面的URL中获取真实的点击ID
-          const urlParams = new URLSearchParams(window.location.search);
-          const realClickId = urlParams.get('click_id'); 
-      
-          // 2. 只有当真实的点击ID存在时，才执行操作
-          if (realClickId) {
-            console.log('Taboola Click ID found:', realClickId);
-      
-            // 3. 通过唯一的ID精确找到购买按钮
-            const purchaseButton = document.getElementById('purchase-button');
+      window.addEventListener('DOMContentLoaded', (event) => {
+        const urlParams = new URLSearchParams(window.location.search);
+    
+        // --- 关键修改：智能识别来自不同平台的ID ---
+        let uniqueClickId = null; // 先创建一个空变量来存放最终的ID
+        let trafficSource = 'unknown'; // 记录流量来源
+    
+        const taboolaId = urlParams.get('click_id');
+        const superedgeId = urlParams.get('tracking_id');
+    
+        if (taboolaId) {
+          uniqueClickId = taboolaId;
+          trafficSource = 'taboola';
+          console.log(`Detected Traffic Source: Taboola, Click ID: ${uniqueClickId}`);
+        } else if (superedgeId) {
+          uniqueClickId = superedgeId;
+          trafficSource = 'superedge';
+          console.log(`Detected Traffic Source: Superedge, Tracking ID: ${uniqueClickId}`);
+        }
+        // --- 识别逻辑结束 ---
+    
+        // 后续的所有逻辑，都只使用 uniqueClickId 这一个变量
+        if (uniqueClickId) {
+          const purchaseButton = document.getElementById('purchase-button');
+          if (purchaseButton) {
             
-            if (purchaseButton) {
-              try {
-                // 4. 将按钮的原始链接字符串，转换成一个可操作的URL对象
-                const hopLinkUrl = new URL(purchaseButton.href);
-                
-                // 5.【核心逻辑】使用 .set() 方法，精确地设置extclid参数的值。
-                // 这个方法会自动处理：如果extclid已存在，就更新它的值；如果不存在，就添加它。
-                hopLinkUrl.searchParams.set('extclid', realClickId);
-                
-                // 6. 将更新后的URL对象，转换回字符串，并重新赋值给按钮
-                purchaseButton.href = hopLinkUrl.toString();
-                
-                console.log('Final, robustly updated HopLink:', purchaseButton.href);
-      
-              } catch (error) {
-                console.error('Error manipulating the HopLink URL:', error);
-              }
-            } else {
-              console.error('Error: Could not find the element with id="purchase-button"!');
+            // 任务A: 修改通往ClickBank的推广链接 (HopLink)
+            try {
+              let hopLinkUrl = new URL(purchaseButton.href);
+              // 统一将获取到的ID，设置到ClickBank的extclid参数上
+              hopLinkUrl.searchParams.set('extclid', uniqueClickId);
+              purchaseButton.href = hopLinkUrl.toString();
+              console.log('SUCCESS: HopLink updated for ClickBank:', purchaseButton.href);
+            } catch (e) {
+              console.error('ERROR: Failed to update HopLink href:', e);
             }
+    
+            // 任务B: 在点击按钮时，发送S2S转化给您的流量源(Superedge)
+            purchaseButton.addEventListener('click', (clickEvent) => {
+              console.log(`ACTION: Purchase button clicked. Firing S2S for source: ${trafficSource}`);
+              
+              // 这个S2S请求是发往您自己为Superedge配置的那个Worker
+              // 只有当流量来源是superedge时才发送，避免将Taboola的转化也发给Superedge
+              if (trafficSource === 'superedge') {
+                const superedgeWorkerUrl = 'https://testsuperedge.livesiy.workers.dev'; // <-- 请替换为您的Superedge Worker URL
+                const postData = JSON.stringify({ click_id: uniqueClickId });
+    
+                if (navigator.sendBeacon) {
+                  navigator.sendBeacon(superedgeWorkerUrl, postData);
+                  console.log('SUCCESS: S2S beacon sent to Superedge worker.');
+                } else {
+                  // 备用方案
+                  fetch(superedgeWorkerUrl, { method: 'POST', body: postData, keepalive: true, headers: { 'Content-Type': 'application/json' }})
+                    .catch(error => console.error('ERROR: Fallback fetch for S2S failed:', error));
+                }
+              }
+            });
           } else {
-            console.log('Taboola Click ID not found in URL.');
+            console.error('ERROR: Could not find element with id="purchase-button"!');
           }
-        });
-      </script>
+        } else {
+          console.log('INFO: No known tracking ID (click_id or tracking_id) found in URL.');
+        }
+      });
+    </script>
 </body>
 </html>
